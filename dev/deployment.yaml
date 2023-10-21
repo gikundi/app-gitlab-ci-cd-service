@@ -1,0 +1,19 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: portal-shule-deployment
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: app-name
+  template:
+    metadata:
+      labels:
+        app: app-name
+    spec:
+      containers:
+      - name: app-name
+        image: registry.gitlab.com/image-url
+        ports:
+        - containerPort: 3000

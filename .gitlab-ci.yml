@@ -1,0 +1,75 @@
+stages:
+  - build
+  - test
+  - scan
+  - staging
+  - production
+
+variables:
+  DOCKER_IMAGE_NAME: "image-run"
+  CONTAINER_REGISTRY: "registry.gitlab.com"
+  GITLAB_GROUP: "gitlab-group-name"
+  DOCKER_IMAGE_TAG: "latest"
+  SONAR_USER_HOME: "${CI_PROJECT_DIR}/.sonar"
+  GIT_DEPTH: "0"
+
+image:
+  name: docker:20.10.7
+  entrypoint: [""]
+  
+before_script:
+  - docker info
+  - echo -n $DOCKER_REGISTRY_PASSWORD | docker login -u $DOCKER_REGISTRY_USER --password-stdin $CONTAINER_REGISTRY
+
+sonarcloud-check:
+  stage: scan
+  tags:
+    - devopskaliserver
+  image: docker:20.10.7
+  services:
+    - docker:dind
+  cache:
+    key: "${CI_JOB_NAME}"
+    paths:
+      - .sonar/cache
+  script:
+    - sonar-scanner
+
+
+build:
+  stage: build
+  tags:
+    - devopskaliserver
+  image: docker:dind
+  script:
+    - docker build -t $CONTAINER_REGISTRY/$GITLAB_GROUP/$DOCKER_IMAGE_NAME:$DOCKER_IMAGE_TAG .
+    - docker push $CONTAINER_REGISTRY/$GITLAB_GROUP/$DOCKER_IMAGE_NAME:$DOCKER_IMAGE_TAG
+
+test1:
+  stage: test
+  tags:
+    - devopskaliserver
+  script:
+    - docker pull $CONTAINER_REGISTRY/$GITLAB_GROUP/$DOCKER_IMAGE_NAME:$DOCKER_IMAGE_TAG
+    - docker run --rm $CONTAINER_REGISTRY/$GITLAB_GROUP/$DOCKER_IMAGE_NAME:$DOCKER_IMAGE_TAG npm test
+
+test2:
+  stage: test
+  tags:
+    - devopskaliserver
+  script:
+    - echo "Running test third"  # Replace with your actual test command
+
+deploy-to-stage:
+  stage: staging
+  tags:
+    - devopskaliserver
+  script:
+    - echo "Deploying to staging"  # Replace with your deployment script for staging
+
+deploy-to-prod:
+  stage: production
+  tags:
+    - devopskaliserver
+  script:
+    - echo "Deploying to production"  # Replace with your deployment script for production
